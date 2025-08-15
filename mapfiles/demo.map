@@ -13,7 +13,8 @@ MAP
   WEB
     METADATA
       "wms_title"          "Demo WMS MapServer"
-      "wms_onlineresource" "https://<ton-service>.up.railway.app/cgi-bin/mapserv?MAP=/srv/mapfiles/demo.map"
+      # Tu pourras remplacer <BASE_URL> après déploiement par ton URL Railway
+      "wms_onlineresource" "<BASE_URL>/cgi-bin/mapserv?MAP=/srv/mapfiles/demo.map"
       "wms_srs"            "EPSG:4326 EPSG:3857"
     END
   END
@@ -22,7 +23,7 @@ MAP
     NAME "states"
     TYPE POLYGON
     STATUS ON
-    DATA "states"     # utilisera /srv/data/states.* 
+    DATA "states"  # attend /srv/data/states.shp/.dbf/.shx/.prj
     PROJECTION
       "init=epsg:4326"
     END
