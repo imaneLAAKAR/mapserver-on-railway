@@ -1,0 +1,41 @@
+MAP
+  NAME "demo"
+  STATUS ON
+  EXTENT -180 -90 180 90
+  UNITS DD
+  SHAPEPATH "/srv/data"
+  IMAGECOLOR 240 240 240
+
+  PROJECTION
+    "init=epsg:4326"
+  END
+
+  WEB
+    METADATA
+      "wms_title"          "Demo WMS MapServer"
+      "wms_onlineresource" "https://<ton-service>.up.railway.app/cgi-bin/mapserv?MAP=/srv/mapfiles/demo.map"
+      "wms_srs"            "EPSG:4326 EPSG:3857"
+    END
+  END
+
+  LAYER
+    NAME "states"
+    TYPE POLYGON
+    STATUS ON
+    DATA "states"     # utilisera /srv/data/states.* 
+    PROJECTION
+      "init=epsg:4326"
+    END
+    CLASS
+      NAME "States"
+      STYLE
+        COLOR 200 220 255
+        OUTLINECOLOR 50 80 120
+      END
+    END
+    METADATA
+      "wms_title" "States"
+      "wms_srs"   "EPSG:4326"
+    END
+  END
+END
