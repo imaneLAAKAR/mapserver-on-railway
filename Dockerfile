@@ -1,4 +1,5 @@
 FROM mapserver/mapserver:latest
+USER root
 
 WORKDIR /srv
 RUN mkdir -p /srv/mapfiles /srv/data /srv/ms_tmp && \
