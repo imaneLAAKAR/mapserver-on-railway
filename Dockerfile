@@ -59,6 +59,21 @@ ENV MS_ERRORFILE=/dev/stderr \
     MS_DEBUGLEVEL=1 \
     MS_MAP_PATTERN=".*" \
     MS_TEMPPATH=/srv/ms_tmp
+    # ... (le haut de ton Dockerfile reste identique)
+
+# Wrapper CGI qui force le MAPFILE et désactive tout config-file
+RUN printf '%s\n' \
+  '#!/bin/sh' \
+  'unset MS_CONFIG_FILE' \
+  'export MS_MAPFILE=/srv/mapfiles/project.map' \
+  'exec /usr/lib/cgi-bin/mapserv' \
+  > /usr/lib/cgi-bin/ms && chmod +x /usr/lib/cgi-bin/ms
+
+# (facultatif mais conseillé) s'assurer que /srv/mapfiles contient bien les fichiers
+RUN ls -la /srv/mapfiles || true
+
+
+
 
 EXPOSE 8080
 CMD ["/srv/start.sh"]
