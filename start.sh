@@ -24,4 +24,7 @@ echo "== Apache modules =="
 apache2ctl -M | sort || true
 
 echo "Démarrage Apache sur le port ${PORT_ENV}…"
+unset MS_CONFIG_FILE || true
+unset MS_MAPFILE || true
+
 exec apache2ctl -DFOREGROUND
