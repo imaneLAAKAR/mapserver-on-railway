@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gdal-bin unzip \
  && rm -rf /var/lib/apt/lists/*
 
-# Modules nécessaires
-RUN a2enmod cgid headers
+# Modules nécessaires (ajout de env)
+RUN a2enmod cgid headers env
 
 # Arborescence
 WORKDIR /srv
@@ -33,7 +33,7 @@ RUN printf '%s\n' \
   '</body></html>' \
   > /var/www/html/index.html
 
-# VHost minimal + CORS
+# VHost minimal + CORS + SetEnv (passe MS_MAPFILE au CGI)
 RUN printf '%s\n' \
   'ServerName localhost' \
   '<VirtualHost *:80>' \
@@ -43,6 +43,9 @@ RUN printf '%s\n' \
   '    Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch' \
   '    Require all granted' \
   '  </Directory>' \
+  '  # Passe les variables au CGI' \
+  '  SetEnv MS_MAPFILE /srv/mapfiles/project.map' \
+  '  SetEnv MS_CONFIG_FILE ""' \
   '  <IfModule mod_headers.c>' \
   '    Header always set Access-Control-Allow-Origin "*"' \
   '    Header always set Access-Control-Allow-Methods "GET, OPTIONS"' \
@@ -51,16 +54,11 @@ RUN printf '%s\n' \
   '</VirtualHost>' \
   > /etc/apache2/sites-available/000-default.conf
 
-# Variables MapServer
+# Variables MapServer (une seule fois)
 ENV MS_ERRORFILE=/dev/stderr \
     MS_DEBUGLEVEL=1 \
     MS_MAP_PATTERN=".*" \
     MS_TEMPPATH=/srv/ms_tmp
-
-# 👉 on fixe le mapfile par défaut ici
-ENV MS_MAPFILE=/srv/mapfiles/project.map
-# on s'assure de ne pas utiliser de config-file externe
-ENV MS_CONFIG_FILE=""
 
 EXPOSE 8080
 CMD ["/srv/start.sh"]
