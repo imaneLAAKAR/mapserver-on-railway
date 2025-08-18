@@ -58,6 +58,9 @@ ENV MS_ERRORFILE=/dev/stderr \
     MS_DEBUGLEVEL=1 \
     MS_MAP_PATTERN=".*" \
     MS_TEMPPATH=/srv/ms_tmp
+ENV MS_CONFIG_FILE=""
+ENV MS_MAPFILE=""
+
 
 EXPOSE 8080
 CMD ["/srv/start.sh"]
