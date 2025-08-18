@@ -1,26 +1,15 @@
 MAP
   NAME "project"
   STATUS ON
-  EXTENT -17.5 20 -1 36
+  EXTENT -180 -90 180 90
   UNITS DD
   PROJECTION "init=epsg:4326" END
 
-  # Optimisations GDAL pour lecture HTTP
-  CONFIG "GDAL_DISABLE_READDIR_ON_OPEN" "YES"
-  CONFIG "CPL_VSIL_CURL_ALLOWED_EXTENSIONS" ".tif,.tiff,.cog,.geojson,.gpkg,.zip"
-  CONFIG "CPL_VSIL_CURL_CHUNK_SIZE" "1048576"
-
   WEB
     METADATA
-      "wms_title"          "Project WMS"
+      "wms_title" "Project WMS"
       "wms_enable_request" "*"
-      "wms_srs"            "EPSG:4326 EPSG:3857"
-      "wfs_title"          "Project WFS"
-      "wfs_enable_request" "*"
-      "wfs_srs"            "EPSG:4326"
+      "wms_srs" "EPSG:4326 EPSG:3857"
     END
   END
-
-  
-  INCLUDE "/srv/mapfiles/auto_layers.map"
 END
