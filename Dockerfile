@@ -1,39 +1,28 @@
-FROM debian:bookworm-slim
-USER root
-ENV DEBIAN_FRONTEND=noninteractive
+FROM debian:bullseye-slim
 
+# Installer Apache + MapServer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    apache2 cgi-mapserver gdal-bin unzip ca-certificates libapache2-mod-headers \
- && rm -rf /var/lib/apt/lists/*
+    apache2 \
+    cgi-mapserver \
+    mapserver-bin \
+    libapache2-mod-fcgid \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN a2enmod cgi && a2enmod headers
+# Activer CGI et MapServer
+RUN a2enmod cgi && a2enmod headers && a2enmod rewrite && a2enmod fcgid
 
+# Copier ton mapfile et données
 WORKDIR /srv
-RUN mkdir -p /srv/mapfiles /srv/data /srv/ms_tmp && \
-    chown -R www-data:www-data /srv && \
-    chmod -R 777 /srv/ms_tmp
+COPY mapfiles /srv/mapfiles
+COPY data /srv/data
 
-ENV MS_ERRORFILE=/tmp/ms_error.txt \
-    MS_DEBUGLEVEL=1 \
-    MS_MAP_PATTERN=".+"
-ENV MS_TEMPPATH=/srv/ms_tmp
-
-COPY mapfiles/ /srv/mapfiles/
-COPY data/ /srv/data/
-
-RUN printf '%s\n' \
-  '<IfModule mod_headers.c>' \
-  '  Header always set Access-Control-Allow-Origin "*"' \
-  '  Header always set Access-Control-Allow-Methods "GET, OPTIONS"' \
-  '  Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"' \
-  '</IfModule>' \
-  > /etc/apache2/conf-available/cors.conf && a2enconf cors
+# Configurer Apache pour exposer MapServer
+RUN echo 'ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/' >> /etc/apache2/sites-available/000-default.conf \
+ && echo '<Directory "/usr/lib/cgi-bin">' >> /etc/apache2/sites-available/000-default.conf \
+ && echo '    AllowOverride None' >> /etc/apache2/sites-available/000-default.conf \
+ && echo '    Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch' >> /etc/apache2/sites-available/000-default.conf \
+ && echo '    Require all granted' >> /etc/apache2/sites-available/000-default.conf \
+ && echo '</Directory>' >> /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 8080
-
-CMD bash -lc '\
-  export PORT=${PORT:-8080}; \
-  sed -ri "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf; \
-  sed -ri "s/:80>/:${PORT}>/" /etc/apache2/sites-available/000-default.conf; \
-  a2enconf serve-cgi-bin >/dev/null 2>&1 || true; \
-  apache2ctl -D FOREGROUND'
+CMD ["apache2ctl", "-D", "FOREGROUND"]
