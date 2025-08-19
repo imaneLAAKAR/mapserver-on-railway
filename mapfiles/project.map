@@ -1,7 +1,6 @@
 MAP
   NAME "projet"
   STATUS ON
-  EXTENT -20 20 0 40  # ⚠️ mets ton emprise réelle
   UNITS DD
   IMAGECOLOR 255 255 255
   CONFIG "MS_ERRORFILE" "/srv/ms_tmp/mapserver.log"
@@ -21,24 +20,16 @@ MAP
     END
   END
 
-  # Exemple 1 : RASTER COG local (si tu en copies un dans /srv/data/rasters)
-  # LAYER
-  #   NAME "orthophoto_demo"
-  #   TYPE RASTER
-  #   STATUS ON
-  #   DATA "/srv/data/rasters/orthophoto_demo.tif"
-  # END
+  # ⚠️ Mets une emprise large pour commencer (tu ajusteras après avec gdalinfo)
+  EXTENT -180 -90 180 90
 
-  # Exemple 2 : SHP zippé local (si copié dans /srv/data/vectors)
-  # LAYER
-  #   NAME "parcelles_demo"
-  #   TYPE POLYGON
-  #   STATUS ON
-  #   CONNECTIONTYPE OGR
-  #   CONNECTION "/vsizip//srv/data/vectors/parcelles_demo.zip"
-  #   DATA "parcelles_demo.shp"
-  # END
-
-  # Si tu utilises l’autogénération :
-  # INCLUDE "/srv/mapfiles/autolayer.map"
+  LAYER
+    NAME "orthophoto_demo"
+    TYPE RASTER
+    STATUS ON
+    DATA "/srv/data/rasters/testw.tif"  # <= remplace par le vrai nom
+    METADATA
+      "wms_title" "Orthophoto"
+    END
+  END
 END
