@@ -20,5 +20,9 @@ echo "== mapserv -v =="
 /usr/lib/cgi-bin/mapserv -v || true
 echo "Démarrage Apache sur le port ${PORT_ENV}…"
 
+export MS_ERRORFILE=/srv/ms_tmp/ms_error.txt
+export MS_DEBUGLEVEL=5
+
+
 # Lancer Apache en avant-plan (image camptocamp fournit apachectl)
 exec apachectl -DFOREGROUND
