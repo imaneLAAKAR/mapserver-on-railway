@@ -1,29 +1,23 @@
-FROM debian:bookworm-slim
-ENV DEBIAN_FRONTEND=noninteractive
+# Image MapServer déjà prête (Apache + CGI configurés)
+FROM camptocamp/mapserver:latest
 USER root
 
-# Apache + MapServer + GDAL (vsicurl) + unzip
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apache2 \
-    cgi-mapserver mapserver-bin \
-    gdal-bin unzip \
+# On ajoutera juste GDAL utils (pratique) et unzip
+RUN apt-get update && apt-get install -y --no-install-recommends gdal-bin unzip \
  && rm -rf /var/lib/apt/lists/*
 
-# Modules nécessaires (CGI + CORS)
-RUN a2enmod cgid headers
-
-# Arborescence appli
+# Dossiers pour tes cartes/données/temp
 WORKDIR /srv
 RUN mkdir -p /srv/mapfiles /srv/data /srv/ms_tmp \
  && chmod -R 777 /srv/ms_tmp
 
-# Tes fichiers (assure-toi que ces chemins existent dans ton repo)
+# Copie de tes fichiers (assure-toi qu'ils existent dans le repo)
 COPY mapfiles/ /srv/mapfiles/
 COPY data/ /srv/data/
 COPY start.sh /srv/start.sh
 RUN chmod +x /srv/start.sh
 
-# Page d'accueil pour valider qu'Apache tourne
+# Page d'accueil pour vérifier Apache
 RUN printf '%s\n' \
   '<!doctype html><html><body style="font-family:sans-serif">' \
   '<h1>Apache OK</h1>' \
@@ -33,33 +27,30 @@ RUN printf '%s\n' \
   '</body></html>' \
   > /var/www/html/index.html
 
-# VHost minimal + CORS
-RUN printf '%s\n' \
-  'ServerName localhost' \
-  '<VirtualHost *:80>' \
-  '  DocumentRoot /var/www/html' \
-  '  ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/' \
-  '  <Directory "/usr/lib/cgi-bin">' \
-  '    Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch' \
-  '    Require all granted' \
-  '  </Directory>' \
-  '  <IfModule mod_headers.c>' \
-  '    Header always set Access-Control-Allow-Origin "*"' \
-  '    Header always set Access-Control-Allow-Methods "GET, OPTIONS"' \
-  '    Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"' \
-  '  </IfModule>' \
-  '</VirtualHost>' \
-  > /etc/apache2/sites-available/000-default.conf
-
-# ⚡ Wrapper CGI : force le MAPFILE et désactive tout config-file
+# Petit wrapper CGI qui fixe le MAPFILE (évite les soucis d'ENV)
+# => on appelle /cgi-bin/ms au lieu de /cgi-bin/mapserv
 RUN printf '%s\n' \
   '#!/bin/sh' \
   'unset MS_CONFIG_FILE' \
-  'export MS_MAPFILE=/srv/mapfiles/demo.map' \
+  'export MS_MAPFILE=/srv/mapfiles/project.map' \
   'exec /usr/lib/cgi-bin/mapserv' \
   > /usr/lib/cgi-bin/ms && chmod +x /usr/lib/cgi-bin/ms
 
-# Variables MapServer utiles (logs / tmp)
+# (Option sûreté) si project.map n'existe pas, on en crée un minimal
+# Cela évite l'erreur au premier démarrage; remplace-le ensuite par le tien.
+RUN test -f /srv/mapfiles/project.map || ( \
+  printf '%s\n' \
+  'MAP' \
+  '  NAME "project"' \
+  '  STATUS ON' \
+  '  EXTENT -180 -90 180 90' \
+  '  UNITS DD' \
+  '  PROJECTION "init=epsg:4326" END' \
+  '  WEB METADATA "wms_title" "Project WMS" "wms_enable_request" "*" "wms_srs" "EPSG:4326 EPSG:3857" END END' \
+  'END' \
+  > /srv/mapfiles/project.map )
+
+# Variables MapServer utiles (logs / temp)
 ENV MS_ERRORFILE=/dev/stderr \
     MS_DEBUGLEVEL=1 \
     MS_MAP_PATTERN=".*" \
