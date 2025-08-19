@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 # Activer CGI & CORS, désactiver la conf packagée "mapserver" (sinon msLoadConfig)
-RUN a2enmod cgid headers && a2disconf mapserver || true
+RUN a2enmod cgid headers && a2disconf mapserver || true && rm -f /etc/apache2/conf-enabled/mapserver.conf || true
+
 
 # Répertoire de travail & arborescence
 WORKDIR /srv
