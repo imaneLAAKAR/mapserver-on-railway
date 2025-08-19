@@ -11,4 +11,6 @@ MAP
       "wms_srs" "EPSG:4326 EPSG:3857"
     END
   END
+  # Quand Capabilities marche, décommente cette ligne si tu génères:
+  # INCLUDE "/srv/mapfiles/auto_layers.map"
 END
