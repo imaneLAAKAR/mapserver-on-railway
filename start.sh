@@ -1,28 +1,19 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
-PORT_ENV="${PORT:-8080}"
+# Dossier temporaire + logs MapServer (facultatif mais utile)
+export MS_TMPDIR=/srv/ms_tmp
+export MS_ERRORFILE=stderr
+export MS_DEBUGLEVEL=3
 
-# Adapter Apache au port Railway
-if [ -f /etc/apache2/ports.conf ]; then
-  sed -i "s/Listen 80/Listen ${PORT_ENV}/" /etc/apache2/ports.conf || true
-fi
-if [ -f /etc/apache2/sites-available/000-default.conf ]; then
-  sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_ENV}>#" /etc/apache2/sites-available/000-default.conf || true
-fi
-if [ -f /etc/apache2/sites-enabled/000-default.conf ]; then
-  sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_ENV}>#" /etc/apache2/sites-enabled/000-default.conf || true
-fi
+# (FACULTATIF) Si tu veux appeler sans `map=` dans l’URL,
+# mets ici le mapfile par défaut (remplacer NOM.map).
+# Sinon, commente cette ligne.
+export MS_MAPFILE=/srv/mapfiles/NOM.map
 
-echo "== Présence mapfiles =="
-ls -la /srv/mapfiles || true
-echo "== mapserv -v =="
-/usr/lib/cgi-bin/mapserv -v || true
-echo "Démarrage Apache sur le port ${PORT_ENV}…"
+# Sécurité : s’assurer qu’aucune ancienne variable "config" parasite
+unset MS_MAPSERVER_CONFIG_FILE
+unset MS_CONFIG_FILE
 
-export MS_ERRORFILE=/srv/ms_tmp/ms_error.txt
-export MS_DEBUGLEVEL=5
-
-
-# Lancer Apache en avant-plan (image camptocamp fournit apachectl)
-exec apachectl -DFOREGROUND
+# Apache en avant-plan
+apachectl -D FOREGROUND
