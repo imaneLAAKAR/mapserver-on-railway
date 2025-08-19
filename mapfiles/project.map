@@ -1,16 +1,44 @@
 MAP
-  NAME "project"
+  NAME "projet"
   STATUS ON
-  EXTENT -180 -90 180 90
+  EXTENT -20 20 0 40  # ⚠️ mets ton emprise réelle
   UNITS DD
-  PROJECTION "init=epsg:4326" END
+  IMAGECOLOR 255 255 255
+  CONFIG "MS_ERRORFILE" "/srv/ms_tmp/mapserver.log"
+  CONFIG "CPL_LOG"      "/srv/ms_tmp/gdal.log"
+
+  PROJECTION
+    "init=epsg:4326"
+  END
+
   WEB
     METADATA
-      "wms_title" "Project WMS"
-      "wms_enable_request" "*"
-      "wms_srs" "EPSG:4326 EPSG:3857"
+      "wms_title"           "WMS Projet"
+      "wms_enable_request"  "*"
+      "wfs_title"           "WFS Projet"
+      "wfs_enable_request"  "*"
+      "ows_srs"             "EPSG:4326 EPSG:3857"
     END
   END
-  # Quand Capabilities marche, décommente cette ligne si tu génères:
-  # INCLUDE "/srv/mapfiles/auto_layers.map"
+
+  # Exemple 1 : RASTER COG local (si tu en copies un dans /srv/data/rasters)
+  # LAYER
+  #   NAME "orthophoto_demo"
+  #   TYPE RASTER
+  #   STATUS ON
+  #   DATA "/srv/data/rasters/orthophoto_demo.tif"
+  # END
+
+  # Exemple 2 : SHP zippé local (si copié dans /srv/data/vectors)
+  # LAYER
+  #   NAME "parcelles_demo"
+  #   TYPE POLYGON
+  #   STATUS ON
+  #   CONNECTIONTYPE OGR
+  #   CONNECTION "/vsizip//srv/data/vectors/parcelles_demo.zip"
+  #   DATA "parcelles_demo.shp"
+  # END
+
+  # Si tu utilises l’autogénération :
+  # INCLUDE "/srv/mapfiles/autolayer.map"
 END
