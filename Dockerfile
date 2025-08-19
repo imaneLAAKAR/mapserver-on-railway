@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 USER root
 
-# Apache + MapServer (CGI et FastCGI) + GDAL + unzip
+# Apache + MapServer (CGI & FastCGI) + GDAL + unzip
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apache2 \
     cgi-mapserver mapserver-bin \
@@ -10,8 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gdal-bin unzip \
  && rm -rf /var/lib/apt/lists/*
 
-# Activer modules nécessaires (CGI + FastCGI + CORS)
+# Modules nécessaires
 RUN a2enmod cgid fcgid headers
+
+# ⚠️ Désactive la conf Apache livrée par cgi-mapserver (évite msLoadConfig)
+RUN a2disconf mapserver || true
 
 # Arborescence appli
 WORKDIR /srv
@@ -51,10 +54,14 @@ RUN printf '%s\n' \
   '</VirtualHost>' \
   > /etc/apache2/sites-available/000-default.conf
 
-# ⚡ Wrapper CGI : détecte le bon binaire et l'exécute
+# 🔧 Wrapper CGI robuste (choisit mapserv ou mapserv.fcgi)
 RUN printf '%s\n' \
   '#!/bin/sh' \
-  'unset MS_CONFIG_FILE' \
+  'export MS_ERRORFILE=/dev/stderr' \
+  'export MS_DEBUGLEVEL=5' \
+  'export MS_MAP_PATTERN=.*' \
+  'export MS_TEMPPATH=/srv/ms_tmp' \
+  'export MS_CONFIG_FILE=' \
   'export MS_MAPFILE=/srv/mapfiles/project.map' \
   'if [ -x /usr/lib/cgi-bin/mapserv ]; then' \
   '  exec /usr/lib/cgi-bin/mapserv' \
@@ -64,7 +71,7 @@ RUN printf '%s\n' \
   '  echo "Status: 500 Internal Server Error"' \
   '  echo "Content-Type: text/plain"' \
   '  echo' \
-  '  echo "MapServer CGI introuvable (mapserv/mapserv.fcgi)."' \
+  '  echo "MapServer CGI introuvable (mapserv / mapserv.fcgi)."' \
   '  exit 1' \
   'fi' \
   > /usr/lib/cgi-bin/ms && chmod +x /usr/lib/cgi-bin/ms
