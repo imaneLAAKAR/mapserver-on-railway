@@ -4,7 +4,6 @@ MAP
   EXTENT -180 -90 180 90
   UNITS DD
   PROJECTION "init=epsg:4326" END
-
   WEB
     METADATA
       "wms_title" "Project WMS"
