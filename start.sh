@@ -3,11 +3,11 @@ set -euo pipefail
 
 export PORT="${PORT:-8080}"
 
-# Mapfile par défaut (si variable absente)
+# Chemin de ton mapfile (venant des Variables Railway)
 export MAPFILE_PATH="${MAPFILE_PATH:-/srv/mapfiles/project.map}"
 export MS_MAPFILE="${MAPFILE_PATH}"
 
-# Désactiver tout fichier de config global packagé
+# ⚠️ Couper tout “config file” global Debian
 unset MS_CONFIG_FILE
 
 echo "Using PORT=$PORT"
