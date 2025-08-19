@@ -2,15 +2,16 @@ FROM debian:bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive
 USER root
 
-# Apache + MapServer + GDAL (vsicurl) + unzip
+# Apache + MapServer (CGI et FastCGI) + GDAL + unzip
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apache2 \
     cgi-mapserver mapserver-bin \
+    libapache2-mod-fcgid \
     gdal-bin unzip \
  && rm -rf /var/lib/apt/lists/*
 
-# Activer modules nécessaires (CGI + CORS)
-RUN a2enmod cgid headers
+# Activer modules nécessaires (CGI + FastCGI + CORS)
+RUN a2enmod cgid fcgid headers
 
 # Arborescence appli
 WORKDIR /srv
@@ -23,17 +24,16 @@ COPY data/ /srv/data/
 COPY start.sh /srv/start.sh
 RUN chmod +x /srv/start.sh
 
-# Page d'accueil (pour valider Apache)
+# Page d'accueil
 RUN printf '%s\n' \
   '<!doctype html><html><body style="font-family:sans-serif">' \
   '<h1>Apache OK</h1>' \
-  '<p>If you can see this, Apache is running.</p>' \
-  '<p>WMS Capabilities:</p>' \
+  '<p>WMS Capabilities :</p>' \
   '<code>/cgi-bin/ms?SERVICE=WMS&REQUEST=GetCapabilities</code>' \
   '</body></html>' \
   > /var/www/html/index.html
 
-# VirtualHost minimal + CORS (PAS de pass-env)
+# VirtualHost minimal + CORS
 RUN printf '%s\n' \
   'ServerName localhost' \
   '<VirtualHost *:80>' \
@@ -51,15 +51,25 @@ RUN printf '%s\n' \
   '</VirtualHost>' \
   > /etc/apache2/sites-available/000-default.conf
 
-# ⚡ Wrapper CGI : force le MAPFILE et appelle mapserv.fcgi (chemin correct sur Bookworm)
+# ⚡ Wrapper CGI : détecte le bon binaire et l'exécute
 RUN printf '%s\n' \
   '#!/bin/sh' \
   'unset MS_CONFIG_FILE' \
   'export MS_MAPFILE=/srv/mapfiles/project.map' \
-  'exec /usr/lib/cgi-bin/mapserv.fcgi' \
+  'if [ -x /usr/lib/cgi-bin/mapserv ]; then' \
+  '  exec /usr/lib/cgi-bin/mapserv' \
+  'elif [ -x /usr/lib/cgi-bin/mapserv.fcgi ]; then' \
+  '  exec /usr/lib/cgi-bin/mapserv.fcgi' \
+  'else' \
+  '  echo "Status: 500 Internal Server Error"' \
+  '  echo "Content-Type: text/plain"' \
+  '  echo' \
+  '  echo "MapServer CGI introuvable (mapserv/mapserv.fcgi)."' \
+  '  exit 1' \
+  'fi' \
   > /usr/lib/cgi-bin/ms && chmod +x /usr/lib/cgi-bin/ms
 
-# Variables utiles pour logs/temp
+# Variables utiles (logs/temp)
 ENV MS_ERRORFILE=/dev/stderr \
     MS_DEBUGLEVEL=1 \
     MS_MAP_PATTERN=".*" \
