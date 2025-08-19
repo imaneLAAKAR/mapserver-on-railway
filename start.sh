@@ -3,28 +3,22 @@ set -euo pipefail
 
 PORT_ENV="${PORT:-8080}"
 
-# Écrire un ports.conf propre avec le PORT Railway
-printf 'Listen %s\n' "$PORT_ENV" > /etc/apache2/ports.conf
-
-# Adapter le vhost au bon port
-sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_ENV}>#" /etc/apache2/sites-available/000-default.conf
-
-# Sanity checks utiles dans les logs
-echo "== MapServer CGI =="
-if [ -x /usr/lib/cgi-bin/mapserv ]; then
-  /usr/lib/cgi-bin/mapserv -v || true
-else
-  echo "ERREUR: /usr/lib/cgi-bin/mapserv introuvable"
+# Adapter Apache au port Railway
+if [ -f /etc/apache2/ports.conf ]; then
+  sed -i "s/Listen 80/Listen ${PORT_ENV}/" /etc/apache2/ports.conf || true
+fi
+if [ -f /etc/apache2/sites-available/000-default.conf ]; then
+  sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_ENV}>#" /etc/apache2/sites-available/000-default.conf || true
+fi
+if [ -f /etc/apache2/sites-enabled/000-default.conf ]; then
+  sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT_ENV}>#" /etc/apache2/sites-enabled/000-default.conf || true
 fi
 
 echo "== Présence mapfiles =="
 ls -la /srv/mapfiles || true
-
-echo "== Apache modules =="
-apache2ctl -M | sort || true
-
+echo "== mapserv -v =="
+/usr/lib/cgi-bin/mapserv -v || true
 echo "Démarrage Apache sur le port ${PORT_ENV}…"
-unset MS_CONFIG_FILE || true
-unset MS_MAPFILE || true
 
-exec apache2ctl -DFOREGROUND
+# Lancer Apache en avant-plan (image camptocamp fournit apachectl)
+exec apachectl -DFOREGROUND
