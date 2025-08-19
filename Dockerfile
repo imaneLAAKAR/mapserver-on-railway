@@ -55,7 +55,7 @@ RUN printf '%s\n' \
 RUN printf '%s\n' \
   '#!/bin/sh' \
   'unset MS_CONFIG_FILE' \
-  'export MS_MAPFILE=/srv/mapfiles/project.map' \
+  'export MS_MAPFILE=/srv/mapfiles/demo.map' \
   'exec /usr/lib/cgi-bin/mapserv' \
   > /usr/lib/cgi-bin/ms && chmod +x /usr/lib/cgi-bin/ms
 
